@@ -7,17 +7,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
+
+    List<String> noms = List.of("yassine", "ismail", "outmane");
 
     @Override
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setContentType("text/html;charset=UTF-8");
+        request.setAttribute("noms", noms);
 
-        response.getWriter().println("<h1>Clinic Management System</h1>");
+        request.getRequestDispatcher("/WEB-INF/views/home.jsp")
+                .forward(request, response);
     }
 }
