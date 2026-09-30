@@ -12,6 +12,8 @@ import java.util.List;
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
 
+
+
     List<String> noms = List.of("yassine", "ismail", "outmane");
 
     @Override
