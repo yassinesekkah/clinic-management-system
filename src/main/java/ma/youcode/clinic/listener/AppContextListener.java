@@ -4,6 +4,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import jakarta.servlet.annotation.WebListener;
 import ma.youcode.clinic.config.DatabaseConfig;
+import ma.youcode.clinic.config.DatabaseInitializer;
 
 import java.util.logging.Logger;
 
@@ -15,12 +16,15 @@ public class AppContextListener implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         LOGGER.info("Starting Clinic Management System...");
-        // Eagerly pre-warm the HikariCP connection pool on application boot
         try {
+            // 1. Pre-warm connection pool
             DatabaseConfig.getDataSource();
             LOGGER.info("HikariCP connection pool successfully initialized.");
+
+            // 2. Automatically execute schema and seed SQL if database is empty
+            DatabaseInitializer.initialize(DatabaseConfig.getDataSource());
         } catch (Exception e) {
-            LOGGER.severe("Failed to initialize database connection pool on startup: " + e.getMessage());
+            LOGGER.severe("Failed to initialize database on startup: " + e.getMessage());
         }
     }
 
