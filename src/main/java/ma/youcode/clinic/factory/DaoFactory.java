@@ -10,13 +10,7 @@ import ma.youcode.clinic.dao.jdbc.JdbcUserDAO;
 
 import javax.sql.DataSource;
 
-/**
- * Centralized Factory for Data Access Objects.
- *
- * LIVRABLE 1 (Current): Instantiates JDBC implementations (Jdbc*DAO).
- * LIVRABLE 2 (Future):  Only change the return statements here to Jpa*DAO.
- *                       No services, servlets, or views will need to change!
- */
+
 public final class DaoFactory {
 
     private DaoFactory() {
