@@ -12,15 +12,12 @@ import java.util.List;
 @WebServlet("/home")
 public class HomeServlet extends HttpServlet {
 
-
-
-    List<String> noms = List.of("yassine", "ismail", "outmane");
-
     @Override
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
             throws ServletException, IOException {
 
+        List<String> noms = List.of("yassine", "ismail", "outmane");
         request.setAttribute("noms", noms);
 
         request.getRequestDispatcher("/WEB-INF/views/home.jsp")
