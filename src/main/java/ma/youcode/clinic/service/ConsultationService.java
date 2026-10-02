@@ -2,6 +2,11 @@ package ma.youcode.clinic.service;
 
 import ma.youcode.clinic.dao.ConsultationDAO;
 import ma.youcode.clinic.dao.PatientDAO;
+import ma.youcode.clinic.model.Consultation;
+import ma.youcode.clinic.model.Patient;
+
+import java.util.Collections;
+import java.util.List;
 
 public class ConsultationService {
 
@@ -14,4 +19,29 @@ public class ConsultationService {
         this.patientDAO = patientDAO;
     }
 
+    // =========================================================================
+    // TRANCHE 2 (COÉQUIPIER) : File d'attente du jour pour le médecin
+    // =========================================================================
+
+    /**
+     * Récupère la liste des patients admis aujourd'hui n'ayant pas encore de consultation.
+     */
+    public List<Patient> getPatientsEnAttenteConsultationDuJour() {
+        // TODO (Coéquipier): Filtrer via Stream API les patients du jour avec statut EN_ATTENTE
+        return Collections.emptyList();
+    }
+
+    // =========================================================================
+    // TRANCHE 1 (VOUS) : Clôture et enregistrement de la consultation
+    // =========================================================================
+
+    /**
+     * Valide et enregistre la consultation terminée (150 DH fixe) et met à jour le patient.
+     */
+    public Consultation cloturerConsultation(Long patientId, Long medecinId,
+                                             String motif, String observations,
+                                             String diagnostic, String traitement) {
+        // TODO (Vous): Valider, créer la consultation (statut TERMINEE, cout 150), sauvegarder et màj patient
+        return null;
+    }
 }
