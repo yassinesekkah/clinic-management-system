@@ -38,14 +38,14 @@ CREATE TABLE patient (
 CREATE TABLE consultation (
     id BIGSERIAL PRIMARY KEY,
     patient_id BIGINT NOT NULL REFERENCES patient(id) ON DELETE CASCADE,
-    medecin_id BIGINT NOT NULL REFERENCES utilisateur(id) ON DELETE RESTRICT,
+    medecin_id BIGINT REFERENCES utilisateur(id) ON DELETE RESTRICT,
     date_consultation TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    motif TEXT NOT NULL,
-    observations TEXT NOT NULL,
-    diagnostic TEXT NOT NULL,
-    traitement TEXT NOT NULL,
+    motif TEXT,
+    observations TEXT,
+    diagnostic TEXT,
+    traitement TEXT,
     cout NUMERIC(8, 2) NOT NULL DEFAULT 150.00,
-    statut VARCHAR(20) NOT NULL DEFAULT 'TERMINEE' CHECK (statut IN ('TERMINEE'))
+    statut VARCHAR(20) NOT NULL DEFAULT 'EN_ATTENTE' CHECK (statut IN ('EN_ATTENTE', 'TERMINEE'))
 );
 
 -- Indexes for performance

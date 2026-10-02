@@ -25,7 +25,13 @@ public class Consultation {
     public Consultation() {
         this.dateConsultation = LocalDateTime.now();
         this.cout = new BigDecimal("150.00");
-        this.statut = ConsultationStatus.TERMINEE;
+        this.statut = ConsultationStatus.EN_ATTENTE;
+    }
+
+    public Consultation(Long patientId) {
+        this();
+        this.patientId = patientId;
+        this.statut = ConsultationStatus.EN_ATTENTE;
     }
 
     public Consultation(Long id, Long patientId, Long medecinId, LocalDateTime dateConsultation,

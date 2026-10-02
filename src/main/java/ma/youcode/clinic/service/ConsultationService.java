@@ -19,6 +19,19 @@ public class ConsultationService {
         this.patientDAO = patientDAO;
     }
 
+    /**
+     * Crée une consultation en attente pour un patient donné (utilisé lors de l'admission par l'infirmier).
+     */
+    public Consultation creerConsultationEnAttente(Long patientId) {
+        if (patientId == null) {
+            throw new IllegalArgumentException("L'identifiant du patient ne peut pas être null.");
+        }
+        Consultation consultation = new Consultation(patientId);
+        Consultation saved = consultationDAO.save(consultation);
+        patientDAO.updateStatut(patientId, ma.youcode.clinic.model.enums.PatientStatus.EN_ATTENTE);
+        return saved;
+    }
+
     // =========================================================================
     // TRANCHE 2 (COÉQUIPIER) : File d'attente du jour pour le médecin
     // =========================================================================

@@ -209,6 +209,28 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
+        .btn-action-consultation {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-action-consultation:hover {
+            background-color: var(--primary);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
         .table-card {
             background: var(--surface);
             border-radius: var(--radius-lg);
@@ -367,11 +389,11 @@
             </a>
         </div>
 
-        <!-- Barre de recherche par ID -->
+        <!-- Barre de recherche multi-critères (Nom, Prénom, SSN ou ID) -->
         <div class="search-toolbar">
             <form method="GET" action="${pageContext.request.contextPath}/patients" class="search-form">
-                <input type="number" name="id" class="search-input" placeholder="Rechercher par identifiant..."
-                       value="<c:out value='${param.id}'/>" min="1" required />
+                <input type="text" name="search" class="search-input" placeholder="Rechercher par nom, prénom, SSN ou ID..."
+                       value="<c:out value='${searchQuery != null ? searchQuery : param.id}'/>" required />
                 <button type="submit" class="btn btn-secondary">Rechercher</button>
                 <c:if test="${IDsearch}">
                     <a href="${pageContext.request.contextPath}/patients" class="btn btn-outline">Réinitialiser</a>
@@ -379,7 +401,7 @@
             </form>
             <c:if test="${IDsearch}">
                 <div style="font-size: 13px; color: var(--text-muted);">
-                    Filtre actif : Recherche par ID <strong>#<c:out value="${param.id}" /></strong>
+                    Filtre actif : Recherche "<strong><c:out value="${searchQuery != null ? searchQuery : param.id}" /></strong>"
                 </div>
             </c:if>
         </div>
@@ -390,8 +412,8 @@
                     <div class="empty-state">
                         <c:choose>
                             <c:when test="${IDsearch}">
-                                <h3>Aucun utilisateur avec cet identifiant</h3>
-                                <p>Aucun dossier patient ne correspond à l'identifiant recherché.</p>
+                                <h3>Aucun patient trouvé</h3>
+                                <p>Aucun dossier patient ne correspond à votre recherche "<strong><c:out value="${searchQuery != null ? searchQuery : param.id}" /></strong>".</p>
                                 <a href="${pageContext.request.contextPath}/patients" class="btn btn-primary" style="margin-top: 12px;">
                                     Voir tous les patients du jour
                                 </a>
@@ -419,6 +441,7 @@
                                 <th>Température</th>
                                 <th>Fréq. Resp.</th>
                                 <th>Statut</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -459,6 +482,14 @@
                                                 <span class="badge-status badge-done"><c:out value="${p.statut}" /></span>
                                             </c:otherwise>
                                         </c:choose>
+                                    </td>
+                                    <td>
+                                        <a href="${pageContext.request.contextPath}/patients?action=creerConsultation&patientId=${p.id}"
+                                           class="btn-action-consultation"
+                                           onclick="return confirm('Ouvrir une consultation en attente pour ce patient ?');"
+                                           title="Ouvrir une consultation en attente pour ce patient">
+                                            ➕ Consultation
+                                        </a>
                                     </td>
                                 </tr>
                             </c:forEach>

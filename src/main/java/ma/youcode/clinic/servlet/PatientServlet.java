@@ -9,6 +9,7 @@ import ma.youcode.clinic.exception.ValidationException;
 import ma.youcode.clinic.factory.ServiceFactory;
 import ma.youcode.clinic.model.Patient;
 import ma.youcode.clinic.model.enums.PatientStatus;
+import ma.youcode.clinic.service.ConsultationService;
 import ma.youcode.clinic.service.PatientService;
 
 import java.io.IOException;
@@ -25,10 +26,12 @@ import java.util.Optional;
 public class PatientServlet extends HttpServlet {
 
     private PatientService patientService;
+    private ConsultationService consultationService;
 
     @Override
     public void init() {
         this.patientService = ServiceFactory.getPatientService();
+        this.consultationService = ServiceFactory.getConsultationService();
     }
 
     @Override
@@ -38,44 +41,53 @@ public class PatientServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         String action = request.getParameter("action");
 
+        // Action: Créer une consultation en attente pour un patient existant
+        if ("creerConsultation".equals(action)) {
+            String patientIdStr = request.getParameter("patientId");
+            if (patientIdStr != null && !patientIdStr.isBlank()) {
+                try {
+                    Long pId = Long.parseLong(patientIdStr.trim());
+                    consultationService.creerConsultationEnAttente(pId);
+                    response.sendRedirect(request.getContextPath() + "/patients?success=consultation_creee");
+                    return;
+                } catch (NumberFormatException e) {
+                    request.setAttribute("errorMessage", "Identifiant patient invalide.");
+                }
+            }
+        }
+
         // Route: Afficher le formulaire d'admission
         if ("/nouveau".equals(pathInfo) || "nouveau".equals(action)) {
             request.getRequestDispatcher("/WEB-INF/views/nurse/patient-form.jsp").forward(request, response);
             return;
         }
 
-        String idParam = request.getParameter("id");
+        String searchQuery = request.getParameter("search");
+        if (searchQuery == null || searchQuery.isBlank()) {
+            searchQuery = request.getParameter("id");
+        }
 
-        // Recherche par ID
-        if (idParam != null && !idParam.trim().isEmpty()) {
+        // Recherche multi-critères (Nom, Prénom, SSN ou ID)
+        if (searchQuery != null && !searchQuery.trim().isEmpty()) {
             request.setAttribute("IDsearch", true);
-            try {
-                Long id = Long.parseLong(idParam.trim());
-                Optional<Patient> foundedPatient = patientService.getPatientById(id);
+            request.setAttribute("searchQuery", searchQuery.trim());
+            List<Patient> foundPatients = patientService.searchPatients(searchQuery.trim());
+            request.setAttribute("patients", foundPatients);
 
-                if (foundedPatient.isPresent()) {
-                    Patient p = foundedPatient.get();
-                    request.setAttribute("foundedPatient", p);
-                    request.setAttribute("patients", List.of(p));
-                } else {
-                    request.setAttribute("foundedPatient", null);
-                    request.setAttribute("patients", Collections.emptyList());
-                    request.setAttribute("errorMessage", "Aucun patient trouvé avec l'identifiant : " + id);
-                }
-            } catch (NumberFormatException e) {
-                request.setAttribute("foundedPatient", null);
-                request.setAttribute("patients", Collections.emptyList());
-                request.setAttribute("errorMessage", "Format d'identifiant invalide : '" + idParam + "'");
+            if (foundPatients.isEmpty()) {
+                request.setAttribute("errorMessage", "Aucun patient trouvé pour la recherche : '" + searchQuery.trim() + "'");
             }
         } else {
             // Route par défaut: Afficher la file d'attente des patients du jour
             request.setAttribute("IDsearch", false);
             List<Patient> patientsDuJour = patientService.getPatientsDuJour();
             request.setAttribute("patients", patientsDuJour);
+        }
 
-            if ("true".equals(request.getParameter("success"))) {
-                request.setAttribute("successMessage", "Le patient a été enregistré avec succès et ajouté à la file d'attente.");
-            }
+        if ("true".equals(request.getParameter("success"))) {
+            request.setAttribute("successMessage", "Le patient a été enregistré avec succès et sa consultation a été créée.");
+        } else if ("consultation_creee".equals(request.getParameter("success"))) {
+            request.setAttribute("successMessage", "Une consultation en attente a été ouverte pour le patient sélectionné.");
         }
 
         request.getRequestDispatcher("/WEB-INF/views/nurse/patient-list.jsp").forward(request, response);
@@ -153,7 +165,8 @@ public class PatientServlet extends HttpServlet {
         }
 
         try {
-            patientService.addPatient(patient);
+            Patient savedPatient = patientService.addPatient(patient);
+            consultationService.creerConsultationEnAttente(savedPatient.getId());
             // Pattern Post-Redirect-Get pour empêcher la double soumission du formulaire
             response.sendRedirect(request.getContextPath() + "/patients?success=true");
         } catch (ValidationException e) {

@@ -74,6 +74,22 @@ public class PatientService {
         return patientDAO.findAll();
     }
 
+    /**
+     * Recherche des patients par nom, prénom, numéro de sécurité sociale ou ID via la Stream API.
+     */
+    public List<Patient> searchPatients(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        String cleanQuery = query.trim().toLowerCase();
+        return patientDAO.findAll().stream()
+                .filter(p -> (p.getNom() != null && p.getNom().toLowerCase().contains(cleanQuery))
+                        || (p.getPrenom() != null && p.getPrenom().toLowerCase().contains(cleanQuery))
+                        || (p.getNumeroSecuriteSociale() != null && p.getNumeroSecuriteSociale().toLowerCase().contains(cleanQuery))
+                        || String.valueOf(p.getId()).equals(cleanQuery))
+                .collect(Collectors.toList());
+    }
+
     public void updateStatut(Long id, PatientStatus statut) {
         patientDAO.updateStatut(id, statut);
     }

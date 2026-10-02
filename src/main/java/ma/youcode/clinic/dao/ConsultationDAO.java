@@ -10,4 +10,5 @@ public interface ConsultationDAO {
     Optional<Consultation> findById(Long id);
     Optional<Consultation> findByPatientId(Long patientId);
     List<Consultation> findAll();
+    void update(Consultation consultation);
 }
