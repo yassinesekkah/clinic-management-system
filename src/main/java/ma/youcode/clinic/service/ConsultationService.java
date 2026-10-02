@@ -4,7 +4,9 @@ import ma.youcode.clinic.dao.ConsultationDAO;
 import ma.youcode.clinic.dao.PatientDAO;
 import ma.youcode.clinic.model.Consultation;
 import ma.youcode.clinic.model.Patient;
+import ma.youcode.clinic.model.enums.ConsultationStatus;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,9 +41,10 @@ public class ConsultationService {
     /**
      * Récupère la liste des patients admis aujourd'hui n'ayant pas encore de consultation.
      */
-    public List<Patient> getPatientsEnAttenteConsultationDuJour() {
-        // TODO (Coéquipier): Filtrer via Stream API les patients du jour avec statut EN_ATTENTE
-        return Collections.emptyList();
+    public List<Consultation> getConsultationsEnAttenteDuJour() {
+        return consultationDAO.findByDateAndStatus(
+            LocalDate.now(),
+            ConsultationStatus.EN_ATTENTE);
     }
 
     // =========================================================================

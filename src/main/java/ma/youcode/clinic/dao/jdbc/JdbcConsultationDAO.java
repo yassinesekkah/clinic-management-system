@@ -2,7 +2,9 @@ package ma.youcode.clinic.dao.jdbc;
 
 import ma.youcode.clinic.dao.ConsultationDAO;
 import ma.youcode.clinic.model.Consultation;
+import ma.youcode.clinic.model.Patient;
 import ma.youcode.clinic.model.enums.ConsultationStatus;
+import ma.youcode.clinic.model.enums.PatientStatus;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -10,7 +12,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,16 +29,16 @@ public class JdbcConsultationDAO implements ConsultationDAO {
     @Override
     public Consultation save(Consultation consultation) {
         String sql = """
-            INSERT INTO consultation (
-                patient_id, medecin_id, date_consultation,
-                motif, observations, diagnostic, traitement,
-                cout, statut
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            RETURNING id, date_consultation
-        """;
+                    INSERT INTO consultation (
+                        patient_id, medecin_id, date_consultation,
+                        motif, observations, diagnostic, traitement,
+                        cout, statut
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id, date_consultation
+                """;
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setLong(1, consultation.getPatientId());
             statement.setObject(2, consultation.getMedecinId());
@@ -91,4 +95,101 @@ public class JdbcConsultationDAO implements ConsultationDAO {
     public void update(Consultation consultation) {
         // Will be implemented for doctor examination and closure
     }
+
+    @Override
+    public List<Consultation> findByDateAndStatus(LocalDate date, ConsultationStatus status) {
+
+        String sql = """
+                SELECT
+                    c.id AS consultation_id,
+                    c.patient_id,
+                    c.medecin_id,
+                    c.date_consultation,
+                    c.motif,
+                    c.observations,
+                    c.diagnostic,
+                    c.traitement,
+                    c.cout,
+                    c.statut AS consultation_statut,
+                    p.id AS patient_id_detail,
+                    p.nom AS patient_nom,
+                    p.prenom AS patient_prenom,
+                    p.date_naissance,
+                    p.numero_securite_sociale,
+                    p.heure_arrivee,
+                    p.tension_arterielle,
+                    p.frequence_cardiaque,
+                    p.temperature,
+                    p.frequence_respiratoire,
+                    p.statut AS patient_statut
+                FROM consultation c
+                JOIN patient p ON p.id = c.patient_id
+                WHERE c.date_consultation >= ?
+                  AND c.date_consultation < ?
+                  AND c.statut = ?
+                ORDER BY p.heure_arrivee ASC
+                """;
+
+        List<Consultation> consultations = new ArrayList<>();
+
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setObject(1, date.atStartOfDay());
+            statement.setObject(2, date.plusDays(1).atStartOfDay());
+            statement.setString(3, status.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Consultation consultation = new Consultation(
+                            resultSet.getLong("consultation_id"),
+                            resultSet.getLong("patient_id"),
+                            getNullableLong(resultSet, "medecin_id"),
+                            resultSet.getObject(
+                                    "date_consultation",
+                                    LocalDateTime.class),
+                            resultSet.getString("motif"),
+                            resultSet.getString("observations"),
+                            resultSet.getString("diagnostic"),
+                            resultSet.getString("traitement"),
+                            resultSet.getBigDecimal("cout"),
+                            ConsultationStatus.valueOf(
+                                    resultSet.getString("consultation_statut")));
+
+                    Patient patient = new Patient(
+                            resultSet.getLong("patient_id_detail"),
+                            resultSet.getString("patient_nom"),
+                            resultSet.getString("patient_prenom"),
+                            resultSet.getObject("date_naissance", LocalDate.class),
+                            resultSet.getString("numero_securite_sociale"),
+                            resultSet.getObject("heure_arrivee", LocalDateTime.class),
+                            resultSet.getString("tension_arterielle"),
+                            resultSet.getInt("frequence_cardiaque"),
+                            resultSet.getBigDecimal("temperature"),
+                            resultSet.getInt("frequence_respiratoire"),
+                            PatientStatus.valueOf(resultSet.getString("patient_statut")));
+
+                    consultation.setPatient(patient);
+
+                    consultations.add(consultation);
+                }
+            }
+
+            return consultations;
+
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "Failed to find consultations by date and status",
+                    e);
+        }
+    }
+
+    private Long getNullableLong(ResultSet resultSet, String column)
+            throws SQLException {
+
+        long value = resultSet.getLong(column);
+
+        return resultSet.wasNull() ? null : value;
+    }
+
 }

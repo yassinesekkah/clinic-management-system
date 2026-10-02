@@ -8,10 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import ma.youcode.clinic.factory.ServiceFactory;
 import ma.youcode.clinic.service.ConsultationService;
 import ma.youcode.clinic.service.PatientService;
+import ma.youcode.clinic.model.Consultation;
 
 import java.io.IOException;
+import java.util.List;
 
-@WebServlet(urlPatterns = {"/consultations", "/consultations/*"})
+@WebServlet(urlPatterns = { "/consultations", "/consultations/*" })
 public class ConsultationServlet extends HttpServlet {
 
     private ConsultationService consultationService;
@@ -40,7 +42,8 @@ public class ConsultationServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TRANCHE 1 (VOUS) : Traitement du formulaire et clôture (150 DH, statut TERMINEE)
+        // TRANCHE 1 (VOUS) : Traitement du formulaire et clôture (150 DH, statut
+        // TERMINEE)
         handleCloturerConsultation(request, response);
     }
 
@@ -49,28 +52,38 @@ public class ConsultationServlet extends HttpServlet {
     // =========================================================================
 
     /**
-     * Tranche 2 (Coéquipier) : Récupère les patients du jour en attente et forwarde vers consultation-queue.jsp
+     * Tranche 2 (Coéquipier) : Récupère les patients du jour en attente et forwarde
+     * vers consultation-queue.jsp
      */
     private void handleQueue(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO (Coéquipier): Charger la file d'attente (getPatientsEnAttenteConsultationDuJour) et l'injecter
-        request.getRequestDispatcher("/WEB-INF/views/doctor/consultation-queue.jsp").forward(request, response);
+
+        List<Consultation> consultations = consultationService.getConsultationsEnAttenteDuJour();
+
+        request.setAttribute("consultations", consultations);
+
+        request.getRequestDispatcher(
+                "/WEB-INF/views/doctor/consultation-queue.jsp").forward(request, response);
     }
 
     /**
-     * Tranche 1 (Vous) : Récupère le patient par son ID et forwarde vers consultation-form.jsp
+     * Tranche 1 (Vous) : Récupère le patient par son ID et forwarde vers
+     * consultation-form.jsp
      */
     private void handleConsultationForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO (Vous): Charger le patient avec ses constantes vitales et l'injecter dans la requête
+        // TODO (Vous): Charger le patient avec ses constantes vitales et l'injecter
+        // dans la requête
         request.getRequestDispatcher("/WEB-INF/views/doctor/consultation-form.jsp").forward(request, response);
     }
 
     /**
-     * Tranche 1 (Vous) : Valide les observations, diagnostic, traitement et clôture la consultation
+     * Tranche 1 (Vous) : Valide les observations, diagnostic, traitement et clôture
+     * la consultation
      */
     private void handleCloturerConsultation(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO (Vous): Enregistrer la consultation, mettre à jour le statut du patient et rediriger
+        // TODO (Vous): Enregistrer la consultation, mettre à jour le statut du patient
+        // et rediriger
     }
 }
