@@ -11,6 +11,5 @@ public interface PatientDAO {
     Optional<Patient> findById(Long id);
     Optional<Patient> findByNumeroSecuriteSociale(String numeroSecuriteSociale);
     List<Patient> findAll();
-    List<Patient> findPatientsDuJour();
     void updateStatut(Long id, PatientStatus statut);
 }
