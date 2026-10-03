@@ -4,6 +4,7 @@ import ma.youcode.clinic.dao.PatientDAO;
 import ma.youcode.clinic.exception.ValidationException;
 import ma.youcode.clinic.model.Patient;
 import ma.youcode.clinic.model.enums.PatientStatus;
+import ma.youcode.clinic.dao.ConsultationDAO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,8 +28,10 @@ public class PatientService {
     }
 
     /**
-     * Enregistre un nouveau patient après validation complète des champs d'identité,
-     * des constantes vitales, et vérification de l'unicité du numéro de sécurité sociale.
+     * Enregistre un nouveau patient après validation complète des champs
+     * d'identité,
+     * des constantes vitales, et vérification de l'unicité du numéro de sécurité
+     * sociale.
      *
      * @param patient l'objet patient à enregistrer
      * @return le patient persisté avec son identifiant généré
@@ -54,8 +57,10 @@ public class PatientService {
     }
 
     /**
-     * Récupère la liste ordonnée des patients enregistrés aujourd'hui en attente de consultation.
-     * Utilise la Stream API pour filtrer par date du jour et trier par ordre d'arrivée chronologique.
+     * Récupère la liste ordonnée des patients enregistrés aujourd'hui en attente de
+     * consultation.
+     * Utilise la Stream API pour filtrer par date du jour et trier par ordre
+     * d'arrivée chronologique.
      */
     public List<Patient> getPatientsDuJour() {
         LocalDate today = LocalDate.now();
@@ -72,6 +77,24 @@ public class PatientService {
 
     public List<Patient> getAllPatients() {
         return patientDAO.findAll();
+    }
+
+    /**
+     * Recherche des patients par nom, prénom, numéro de sécurité sociale ou ID via
+     * la Stream API.
+     */
+    public List<Patient> searchPatients(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        String cleanQuery = query.trim().toLowerCase();
+        return patientDAO.findAll().stream()
+                .filter(p -> (p.getNom() != null && p.getNom().toLowerCase().contains(cleanQuery))
+                        || (p.getPrenom() != null && p.getPrenom().toLowerCase().contains(cleanQuery))
+                        || (p.getNumeroSecuriteSociale() != null
+                                && p.getNumeroSecuriteSociale().toLowerCase().contains(cleanQuery))
+                        || String.valueOf(p.getId()).equals(cleanQuery))
+                .collect(Collectors.toList());
     }
 
     public void updateStatut(Long id, PatientStatus statut) {
@@ -143,4 +166,3 @@ public class PatientService {
         }
     }
 }
-

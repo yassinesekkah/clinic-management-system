@@ -341,9 +341,20 @@
                         </div>
                     </div>
 
+                    <!-- Option Consultation -->
+                    <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px 20px; margin-bottom: 24px;">
+                        <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text-main);">
+                            <input type="checkbox" name="autoConsultation" value="true" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;" />
+                            <span>Ouvrir immédiatement une consultation en attente pour ce patient aujourd'hui</span>
+                        </label>
+                        <p style="margin: 6px 0 0 30px; font-size: 12.5px; color: var(--text-muted);">
+                            Si cochée, le patient sera automatiquement placé dans la file d'attente du médecin dès son enregistrement.
+                        </p>
+                    </div>
+
                     <div class="form-actions">
                         <a href="${pageContext.request.contextPath}/patients" class="btn btn-secondary">Annuler</a>
-                        <button type="submit" id="btn-submit" class="btn btn-primary">Valider et mettre en attente</button>
+                        <button type="submit" id="btn-submit" class="btn btn-primary">Enregistrer le patient</button>
                     </div>
                 </form>
             </div>

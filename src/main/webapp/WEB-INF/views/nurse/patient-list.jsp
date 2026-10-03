@@ -209,6 +209,28 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
+        .btn-action-consultation {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+            border: 1px solid rgba(37, 99, 235, 0.2);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-action-consultation:hover {
+            background-color: var(--primary);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
         .table-card {
             background: var(--surface);
             border-radius: var(--radius-lg);
@@ -334,8 +356,11 @@
     <div class="container">
         <div class="top-navbar">
             <span class="brand-badge">Clinique - Module Infirmier</span>
-            <div style="font-size: 13px; color: var(--text-muted);">
-                Date : <strong><%= java.time.LocalDate.now() %></strong>
+            <div style="display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-muted);">
+                <span>Date : <strong><%= java.time.LocalDate.now() %></strong></span>
+                <a href="${pageContext.request.contextPath}/logout" style="color: #ef4444; font-weight: 600; text-decoration: none; padding: 5px 12px; border-radius: 8px; background: #fef2f2; border: 1px solid #fee2e2; transition: all 0.15s ease;">
+                    🚪 Déconnexion
+                </a>
             </div>
         </div>
 
@@ -359,19 +384,24 @@
 
         <div class="page-header">
             <div class="header-title">
-                <h1>File d'attente du jour</h1>
-                <p>Consultez et suivez l'ordre d'arrivée des patients admis pour consultation.</p>
+                <h1>Registre des patients</h1>
+                <p>Liste complète des patients enregistrés dans la clinique et gestion des admissions du jour.</p>
             </div>
-            <a href="${pageContext.request.contextPath}/patients/nouveau" class="btn btn-primary" id="btn-nouveau-patient">
-                + Admettre un patient
-            </a>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="${pageContext.request.contextPath}/consultations" class="btn btn-secondary" id="btn-file-consultations">
+                    📋 File des consultations du jour
+                </a>
+                <a href="${pageContext.request.contextPath}/patients/nouveau" class="btn btn-primary" id="btn-nouveau-patient">
+                    + Admettre un patient
+                </a>
+            </div>
         </div>
 
-        <!-- Barre de recherche par ID -->
+        <!-- Barre de recherche multi-critères (Nom, Prénom, SSN ou ID) -->
         <div class="search-toolbar">
             <form method="GET" action="${pageContext.request.contextPath}/patients" class="search-form">
-                <input type="number" name="id" class="search-input" placeholder="Rechercher par identifiant..."
-                       value="<c:out value='${param.id}'/>" min="1" required />
+                <input type="text" name="search" class="search-input" placeholder="Rechercher par nom, prénom, SSN ou ID..."
+                       value="<c:out value='${searchQuery != null ? searchQuery : param.id}'/>" required />
                 <button type="submit" class="btn btn-secondary">Rechercher</button>
                 <c:if test="${IDsearch}">
                     <a href="${pageContext.request.contextPath}/patients" class="btn btn-outline">Réinitialiser</a>
@@ -379,7 +409,7 @@
             </form>
             <c:if test="${IDsearch}">
                 <div style="font-size: 13px; color: var(--text-muted);">
-                    Filtre actif : Recherche par ID <strong>#<c:out value="${param.id}" /></strong>
+                    Filtre actif : Recherche "<strong><c:out value="${searchQuery != null ? searchQuery : param.id}" /></strong>"
                 </div>
             </c:if>
         </div>
@@ -390,17 +420,17 @@
                     <div class="empty-state">
                         <c:choose>
                             <c:when test="${IDsearch}">
-                                <h3>Aucun utilisateur avec cet identifiant</h3>
-                                <p>Aucun dossier patient ne correspond à l'identifiant recherché.</p>
+                                <h3>Aucun patient trouvé</h3>
+                                <p>Aucun dossier patient ne correspond à votre recherche "<strong><c:out value="${searchQuery != null ? searchQuery : param.id}" /></strong>".</p>
                                 <a href="${pageContext.request.contextPath}/patients" class="btn btn-primary" style="margin-top: 12px;">
-                                    Voir tous les patients du jour
+                                    Voir tous les patients
                                 </a>
                             </c:when>
                             <c:otherwise>
-                                <h3>Aucun patient dans la file d'attente aujourd'hui</h3>
-                                <p>Les patients enregistrés par l'infirmier apparaîtront ici par ordre d'arrivée.</p>
+                                <h3>Aucun patient enregistré</h3>
+                                <p>Commencez par enregistrer un premier patient dans la clinique.</p>
                                 <a href="${pageContext.request.contextPath}/patients/nouveau" class="btn btn-primary">
-                                    Enregistrer le premier patient
+                                    Enregistrer un patient
                                 </a>
                             </c:otherwise>
                         </c:choose>
@@ -410,53 +440,76 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Heure</th>
+                                <th style="width: 70px;">ID</th>
                                 <th>Patient</th>
-                                <th>N° Sécurité Sociale</th>
-                                <th>Tension</th>
-                                <th>Fréq. Cardiaque</th>
-                                <th>Température</th>
-                                <th>Fréq. Resp.</th>
-                                <th>Statut</th>
+                                <th>Dernières Constantes</th>
+                                <th>Consultation Aujourd'hui</th>
+                                <th style="text-align: right;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <c:forEach var="p" items="${patients}">
                                 <tr>
                                     <td>
-                                        <span class="ssn-badge" style="font-weight: 600; color: var(--primary);">#<c:out value="${p.id}" /></span>
+                                        <span class="ssn-badge" style="font-weight: 700; color: var(--primary);">#<c:out value="${p.id}" /></span>
                                     </td>
                                     <td>
-                                        <span class="time-badge">
-                                            ${p.heureArrivee.toLocalTime().toString().substring(0, 5)}
-                                        </span>
+                                        <div class="patient-name" style="font-size: 15px;">
+                                            <c:out value="${p.nomComplet}" />
+                                        </div>
+                                        <div style="margin-top: 3px; display: flex; align-items: center; gap: 8px;">
+                                            <span class="ssn-badge">NSS: <c:out value="${p.numeroSecuriteSociale}" /></span>
+                                            <c:if test="${not empty p.dateNaissance}">
+                                                <span style="font-size: 12px; color: var(--text-muted);">
+                                                    Né(e) le <c:out value="${p.dateNaissance}" />
+                                                </span>
+                                            </c:if>
+                                        </div>
                                     </td>
                                     <td>
-                                        <div class="patient-name"><c:out value="${p.nomComplet}" /></div>
-                                    </td>
-                                    <td>
-                                        <span class="ssn-badge"><c:out value="${p.numeroSecuriteSociale}" /></span>
-                                    </td>
-                                    <td>
-                                        <span class="vitals-chip"><c:out value="${p.tensionArterielle}" /> mmHg</span>
-                                    </td>
-                                    <td>
-                                        <span class="vitals-chip"><c:out value="${p.frequenceCardiaque}" /> bpm</span>
-                                    </td>
-                                    <td>
-                                        <span class="vitals-chip"><c:out value="${p.temperature}" /> °C</span>
-                                    </td>
-                                    <td>
-                                        <span class="vitals-chip"><c:out value="${p.frequenceRespiratoire}" /> c/min</span>
+                                        <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                            <span class="vitals-chip" title="Tension">🩺 <c:out value="${p.tensionArterielle}" /></span>
+                                            <span class="vitals-chip" title="Fréquence Cardiaque">❤️ <c:out value="${p.frequenceCardiaque}" /> bpm</span>
+                                            <span class="vitals-chip" title="Température">🌡️ <c:out value="${p.temperature}" /> °C</span>
+                                            <span class="vitals-chip" title="Fréquence Respiratoire">🫁 <c:out value="${p.frequenceRespiratoire}" />/min</span>
+                                        </div>
                                     </td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${p.statut == 'EN_ATTENTE'}">
-                                                <span class="badge-status badge-waiting">En attente</span>
+                                            <c:when test="${patientsEnAttenteAujourdhui.contains(p.id)}">
+                                                <span class="badge-status badge-waiting">
+                                                    ⏳ En attente médecin
+                                                </span>
+                                            </c:when>
+                                            <c:when test="${patientsTerminesAujourdhui.contains(p.id)}">
+                                                <span class="badge-status badge-done">
+                                                    ✓ Consulté aujourd'hui
+                                                </span>
                                             </c:when>
                                             <c:otherwise>
-                                                <span class="badge-status badge-done"><c:out value="${p.statut}" /></span>
+                                                <span style="color: #94a3b8; font-size: 13px; font-style: italic;">
+                                                    — Aucune consultation
+                                                </span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <c:choose>
+                                            <c:when test="${patientsEnAttenteAujourdhui.contains(p.id)}">
+                                                <a href="${pageContext.request.contextPath}/consultations"
+                                                   class="btn btn-secondary"
+                                                   style="padding: 6px 12px; font-size: 13px; height: 34px;">
+                                                    👁️ Voir en file
+                                                </a>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <a href="${pageContext.request.contextPath}/patients?action=creerConsultation&patientId=${p.id}"
+                                                   class="btn btn-primary"
+                                                   style="padding: 6px 12px; font-size: 13px; height: 34px;"
+                                                   onclick="return confirm('Ouvrir une consultation en attente aujourd\'hui pour ${p.prenom} ${p.nom} ?');"
+                                                   title="Ouvrir une consultation pour aujourd'hui">
+                                                    ➕ Ouvrir consultation
+                                                </a>
                                             </c:otherwise>
                                         </c:choose>
                                     </td>
