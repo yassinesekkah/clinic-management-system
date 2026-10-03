@@ -31,8 +31,20 @@ public class AppContextListener implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         LOGGER.info("Shutting down Clinic Management System...");
-        // Gracefully terminate HikariCP background threads and close all database connections
+        // 1. Gracefully terminate HikariCP background threads and close all database connections
         DatabaseConfig.shutdown();
         LOGGER.info("HikariCP connection pool shut down cleanly.");
+
+        // 2. Deregister JDBC drivers to prevent Tomcat memory leaks and hanging shutdown threads
+        java.util.Enumeration<java.sql.Driver> drivers = java.sql.DriverManager.getDrivers();
+        while (drivers.hasMoreElements()) {
+            java.sql.Driver driver = drivers.nextElement();
+            try {
+                java.sql.DriverManager.deregisterDriver(driver);
+                LOGGER.info("Deregistered JDBC driver: " + driver);
+            } catch (java.sql.SQLException e) {
+                LOGGER.warning("Failed to deregister JDBC driver: " + e.getMessage());
+            }
+        }
     }
 }
