@@ -70,6 +70,12 @@
         <p role="alert"><c:out value="${error}" /></p>
     </c:if>
 
+    <c:if test="${param.logout == 'true'}">
+        <p style="padding: 12px; border: 1px solid #bbf7d0; border-radius: 6px; background: #f0fdf4; color: #166534; font-size: 14px; margin: 0 0 20px;">
+            ✓ Vous avez été déconnecté avec succès.
+        </p>
+    </c:if>
+
     <form method="post" action="${pageContext.request.contextPath}/login">
         <input type="hidden" name="csrfToken" value="${sessionScope.csrfToken}">
 

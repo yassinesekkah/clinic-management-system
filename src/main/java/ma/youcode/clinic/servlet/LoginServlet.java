@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpSession;
 import ma.youcode.clinic.factory.ServiceFactory;
 import ma.youcode.clinic.model.Utilisateur;
 import ma.youcode.clinic.service.AuthService;
+import ma.youcode.clinic.model.enums.Role;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -61,14 +62,19 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        // 4. Changer l'identifiant de session et garder uniquement les informations utiles.
+        // 4. Changer l'identifiant de session et garder uniquement les informations
+        // utiles.
         Utilisateur utilisateur = resultat.get();
+        Role userRole = utilisateur.getRole();
         request.changeSessionId();
         session.setAttribute("userId", utilisateur.getId());
-        session.setAttribute("role", utilisateur.getRole());
+        session.setAttribute("role", userRole);
         session.setAttribute("csrfToken", UUID.randomUUID().toString());
 
-        // Les pages propres a chaque role seront ajoutees ensuite.
-        response.sendRedirect(request.getContextPath() + "/home");
+        switch (userRole) {
+            case INFIRMIER -> response.sendRedirect(request.getContextPath() + "/patients");
+            case GENERALISTE -> response.sendRedirect(request.getContextPath() + "/consultations");
+            default -> response.sendRedirect(request.getContextPath() + "/home");
+        }
     }
 }

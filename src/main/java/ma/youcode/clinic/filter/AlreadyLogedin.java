@@ -12,9 +12,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import ma.youcode.clinic.model.enums.*;
+import ma.youcode.clinic.service.AuthService;
 
-@WebFilter(urlPatterns = { "/consultations", "/consultations/*" })
-public class DoctorAuthFilter implements Filter {
+@WebFilter(urlPatterns = { "/login" })
+public class AlreadyLogedin implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -26,22 +27,13 @@ public class DoctorAuthFilter implements Filter {
 
         HttpSession session = request2.getSession(false);
 
-        String method = request2.getMethod();
-        String pathInfo = request2.getPathInfo(); 
-        
-        // 1. Any user accessing /consultations must be logged in
-        if (session == null || session.getAttribute("userId") == null) {
-            response2.sendRedirect(request2.getContextPath() + "/login");
-            return;
-        }
-
-        Role role = (Role) session.getAttribute("role");
-
-        // 2. Starting or closing a consultation is restricted strictly to the doctor
-        boolean isDoctorOnly = "POST".equalsIgnoreCase(method) || "/nouvelle".equals(pathInfo);
-
-        if (isDoctorOnly && role != Role.GENERALISTE) {
-            response2.sendError(HttpServletResponse.SC_FORBIDDEN);
+        if (session != null && session.getAttribute("userId") != null) {
+            Role userRole = (Role) session.getAttribute("role");
+            switch (userRole) {
+                case INFIRMIER -> response2.sendRedirect(request2.getContextPath() + "/patients");
+                case GENERALISTE -> response2.sendRedirect(request2.getContextPath() + "/consultations");
+                default -> response2.sendRedirect(request2.getContextPath() + "/home");
+            }
             return;
         }
 
