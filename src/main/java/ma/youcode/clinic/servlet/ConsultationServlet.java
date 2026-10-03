@@ -5,13 +5,16 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import ma.youcode.clinic.factory.ServiceFactory;
+import ma.youcode.clinic.model.Patient;
 import ma.youcode.clinic.service.ConsultationService;
 import ma.youcode.clinic.service.PatientService;
 import ma.youcode.clinic.model.Consultation;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @WebServlet(urlPatterns = { "/consultations", "/consultations/*" })
 public class ConsultationServlet extends HttpServlet {
@@ -72,8 +75,15 @@ public class ConsultationServlet extends HttpServlet {
      */
     private void handleConsultationForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO (Vous): Charger le patient avec ses constantes vitales et l'injecter
-        // dans la requête
+        Long patientId = Long.parseLong(request.getParameter("patientId"));
+        Optional<Patient> patient = patientService.getPatientById(patientId);
+        if (patient.isPresent()) {
+            request.setAttribute("patient", patient.get());
+        } else {
+            response.sendRedirect(request.getContextPath() + "/consultations?error=not_found");
+            return;
+        }
+
         request.getRequestDispatcher("/WEB-INF/views/doctor/consultation-form.jsp").forward(request, response);
     }
 
@@ -83,7 +93,29 @@ public class ConsultationServlet extends HttpServlet {
      */
     private void handleCloturerConsultation(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // TODO (Vous): Enregistrer la consultation, mettre à jour le statut du patient
-        // et rediriger
+
+        request.setCharacterEncoding("UTF-8");
+
+        // 1. Verify CSRF Token
+        HttpSession session = request.getSession(false);
+        String submittedToken = request.getParameter("csrfToken");
+        if (session == null || submittedToken == null || !submittedToken.equals(session.getAttribute("csrfToken"))) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Jeton CSRF invalide ou session expirée.");
+            return;
+        }
+
+        // 2. Read fields by their HTML 'name' attribute
+        String patientIdStr = request.getParameter("patientId");
+        String motif = request.getParameter("motif");
+        String observations = request.getParameter("observations");
+        String diagnostic = request.getParameter("diagnostic");
+        String traitement = request.getParameter("traitement");
+        // 3. Convert types and validate
+        Long patientId = Long.parseLong(patientIdStr);
+
+        // 4. Retrieve logged-in doctor ID from session (NEVER pass doctorId in a hidden form field!)
+        Long medecinId = (Long) session.getAttribute("userId");
+        consultationService.cloturerConsultation(patientId, medecinId, motif, observations, diagnostic, traitement);
+        response.sendRedirect(request.getContextPath() + "/consultations");
     }
 }

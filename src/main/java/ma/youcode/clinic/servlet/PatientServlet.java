@@ -78,14 +78,20 @@ public class PatientServlet extends HttpServlet {
                 request.setAttribute("errorMessage", "Aucun patient trouvé pour la recherche : '" + searchQuery.trim() + "'");
             }
         } else {
-            // Route par défaut: Afficher la file d'attente des patients du jour
+            // Route par défaut: Afficher l'ensemble des patients enregistrés dans la clinique
             request.setAttribute("IDsearch", false);
-            List<Patient> patientsDuJour = patientService.getPatientsDuJour();
-            request.setAttribute("patients", patientsDuJour);
+            List<Patient> allPatients = patientService.getAllPatients();
+            request.setAttribute("patients", allPatients);
         }
+
+        // Injecter les IDs des patients ayant déjà une consultation aujourd'hui (en attente ou terminée)
+        request.setAttribute("patientsEnAttenteAujourdhui", consultationService.getPatientIdsWithConsultationEnAttenteDuJour());
+        request.setAttribute("patientsTerminesAujourdhui", consultationService.getPatientIdsWithConsultationTermineeDuJour());
 
         if ("true".equals(request.getParameter("success"))) {
             request.setAttribute("successMessage", "Le patient a été enregistré avec succès et sa consultation a été créée.");
+        } else if ("patient_cree".equals(request.getParameter("success"))) {
+            request.setAttribute("successMessage", "Le patient a été enregistré avec succès.");
         } else if ("consultation_creee".equals(request.getParameter("success"))) {
             request.setAttribute("successMessage", "Une consultation en attente a été ouverte pour le patient sélectionné.");
         }
@@ -166,9 +172,17 @@ public class PatientServlet extends HttpServlet {
 
         try {
             Patient savedPatient = patientService.addPatient(patient);
-            consultationService.creerConsultationEnAttente(savedPatient.getId());
-            // Pattern Post-Redirect-Get pour empêcher la double soumission du formulaire
-            response.sendRedirect(request.getContextPath() + "/patients?success=true");
+
+            boolean autoConsultation = "true".equalsIgnoreCase(request.getParameter("autoConsultation"))
+                    || "on".equalsIgnoreCase(request.getParameter("autoConsultation"));
+
+            if (autoConsultation) {
+                consultationService.creerConsultationEnAttente(savedPatient.getId());
+                response.sendRedirect(request.getContextPath() + "/patients?success=true");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/patients?success=patient_cree");
+            }
+            return;
         } catch (ValidationException e) {
             request.setAttribute("errors", e.getErrors());
             request.setAttribute("patient", patient);
